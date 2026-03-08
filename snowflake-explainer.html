@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snowflake Explained</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ice: #e8f4fd;
+    --frost: #b3d9f5;
+    --blue: #29a8e0;
+    --deep: #0a1628;
+    --navy: #0d2240;
+    --mid: #1a3a5c;
+    --accent: #00e5ff;
+    --warm: #f0c040;
+    --text: #cce4f5;
+    --soft: #7ab3d4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deep);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(41,168,224,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,229,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 50% 50%, rgba(10,22,40,0) 0%, var(--deep) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .snowflake-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    animation: spin 20s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 800;
+    color: white;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--soft);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* One-liner */
+  .one-liner {
+    background: linear-gradient(135deg, rgba(41,168,224,0.15), rgba(0,229,255,0.08));
+    border: 1px solid rgba(0,229,255,0.25);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 40px;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--ice);
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .one-liner strong { color: var(--accent); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .tab {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(41,168,224,0.3);
+    background: transparent;
+    color: var(--soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .tab:hover { border-color: var(--blue); color: var(--ice); }
+
+  .tab.active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+    font-weight: 500;
+  }
+
+  /* Panels */
+  .panel { display: none; animation: fadeUp 0.4s ease both; }
+  .panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: rgba(13,34,64,0.7);
+    border: 1px solid rgba(41,168,224,0.2);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .card:hover {
+    border-color: rgba(41,168,224,0.5);
+    transform: translateY(-2px);
+  }
+
+  .card-icon { font-size: 28px; margin-bottom: 10px; }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 8px;
+  }
+  .card-desc { font-size: 0.8rem; color: var(--soft); line-height: 1.6; }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: rgba(13,34,64,0.7);
+    border: 1px solid rgba(41,168,224,0.2);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .arch-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: white;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    text-align: center;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--soft);
+  }
+
+  .arch-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .arch-layer {
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .arch-layer:hover { filter: brightness(1.15); }
+
+  .layer-storage { background: linear-gradient(90deg, rgba(41,168,224,0.25), rgba(41,168,224,0.1)); border: 1px solid rgba(41,168,224,0.4); }
+  .layer-compute { background: linear-gradient(90deg, rgba(0,229,255,0.2), rgba(0,229,255,0.08)); border: 1px solid rgba(0,229,255,0.4); }
+  .layer-services { background: linear-gradient(90deg, rgba(240,192,64,0.2), rgba(240,192,64,0.08)); border: 1px solid rgba(240,192,64,0.35); }
+
+  .layer-icon { font-size: 22px; flex-shrink: 0; }
+  .layer-name { font-family: 'Syne', sans-serif; font-weight: 700; color: white; font-size: 0.9rem; }
+  .layer-desc { font-size: 0.75rem; color: var(--soft); margin-top: 2px; }
+
+  .arch-arrow {
+    text-align: center;
+    color: rgba(41,168,224,0.4);
+    font-size: 18px;
+    margin: -4px 0;
+  }
+
+  /* Analogy */
+  .analogy-box {
+    background: linear-gradient(135deg, rgba(240,192,64,0.12), rgba(240,192,64,0.04));
+    border: 1px solid rgba(240,192,64,0.3);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 16px;
+  }
+
+  .analogy-label {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--warm);
+    margin-bottom: 10px;
+  }
+
+  .analogy-text { font-size: 0.9rem; line-height: 1.7; color: var(--ice); }
+  .analogy-text strong { color: var(--warm); }
+
+  /* Comparison table */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .compare-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--soft);
+    border-bottom: 1px solid rgba(41,168,224,0.2);
+  }
+  .compare-table td { padding: 12px 14px; border-bottom: 1px solid rgba(41,168,224,0.1); color: var(--text); vertical-align: top; line-height: 1.5; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: rgba(41,168,224,0.05); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+  .badge-green { background: rgba(0,200,100,0.2); color: #00e090; border: 1px solid rgba(0,200,100,0.3); }
+  .badge-blue { background: rgba(41,168,224,0.2); color: var(--blue); border: 1px solid rgba(41,168,224,0.3); }
+  .badge-yellow { background: rgba(240,192,64,0.2); color: var(--warm); border: 1px solid rgba(240,192,64,0.3); }
+
+  /* Use cases */
+  .usecase-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(41,168,224,0.15);
+    margin-bottom: 12px;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+  .usecase-item:hover { border-color: rgba(41,168,224,0.4); }
+  .usecase-emoji { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+  .usecase-name { font-family: 'Syne', sans-serif; font-weight: 700; color: white; font-size: 0.88rem; margin-bottom: 4px; }
+  .usecase-desc { font-size: 0.78rem; color: var(--soft); line-height: 1.6; }
+
+  /* Key terms */
+  .term-item {
+    padding: 14px 18px;
+    border-radius: 10px;
+    border-left: 3px solid var(--blue);
+    background: rgba(13,34,64,0.5);
+    margin-bottom: 10px;
+  }
+  .term-name { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); font-size: 0.9rem; margin-bottom: 4px; }
+  .term-def { font-size: 0.8rem; color: var(--text); line-height: 1.6; }
+
+  /* Footer note */
+  .footer-note {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 0.72rem;
+    color: rgba(122,179,212,0.4);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <span class="snowflake-icon">❄️</span>
+    <h1>Snow<span>flake</span></h1>
+    <p class="subtitle">Cloud Data Platform — Explained Simply</p>
+  </div>
+
+  <div class="one-liner">
+    Think of Snowflake as a <strong>massively powerful database that lives entirely in the cloud</strong> — one where you never worry about servers, storage limits, or performance slowdowns. You just query your data, and Snowflake handles everything else.
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('what')">What is it?</button>
+    <button class="tab" onclick="showTab('how')">How it works</button>
+    <button class="tab" onclick="showTab('why')">Why use it?</button>
+    <button class="tab" onclick="showTab('usecases')">Use cases</button>
+    <button class="tab" onclick="showTab('terms')">Key terms</button>
+  </div>
+
+  <!-- WHAT IS IT -->
+  <div id="tab-what" class="panel active">
+    <div class="analogy-box">
+      <div class="analogy-label">💡 Real-world analogy</div>
+      <div class="analogy-text">
+        Imagine you own a giant library. A <strong>traditional database</strong> is like owning a building — you buy the space, hire staff, and manage it yourself. If more people show up, it gets overwhelmed. <strong>Snowflake</strong> is like renting a magical library that instantly grows more shelves when you need them, shrinks when you don't, and lets 1,000 people read different books simultaneously — with no interference.
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">☁️</div>
+        <div class="card-title">100% Cloud-Native</div>
+        <div class="card-desc">Runs on AWS, Azure, or GCP. No hardware to buy or servers to manage. Ever.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📦</div>
+        <div class="card-title">Structured + Semi-Structured</div>
+        <div class="card-desc">Handles regular tables AND JSON/XML data natively. No special tools needed.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔀</div>
+        <div class="card-title">Separates Storage & Compute</div>
+        <div class="card-desc">Store your data once. Run as many query engines as you need, independently.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">💳</div>
+        <div class="card-title">Pay-As-You-Go</div>
+        <div class="card-desc">You're billed for what you actually use, not a fixed server size running 24/7.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div id="tab-how" class="panel">
+    <div class="arch-diagram">
+      <div class="arch-title">Snowflake's 3-Layer Architecture</div>
+      <div class="arch-layers">
+
+        <div class="arch-layer layer-services" onclick="toggleDetail('svc')">
+          <div class="layer-icon">🧠</div>
+          <div>
+            <div class="layer-name">Cloud Services Layer</div>
+            <div class="layer-desc">Authentication, query optimization, metadata — the "brain"</div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">↕</div>
+
+        <div class="arch-layer layer-compute" onclick="toggleDetail('cmp')">
+          <div class="layer-icon">⚡</div>
+          <div>
+            <div class="layer-name">Query Processing Layer</div>
+            <div class="layer-desc">Virtual Warehouses — the "engines" that actually crunch your data</div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">↕</div>
+
+        <div class="arch-layer layer-storage" onclick="toggleDetail('str')">
+          <div class="layer-icon">🗄️</div>
+          <div>
+            <div class="layer-name">Centralized Storage Layer</div>
+            <div class="layer-desc">All data stored in compressed columnar format in cloud object storage</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="analogy-box">
+      <div class="analogy-label">⚙️ How a query works</div>
+      <div class="analogy-text">
+        You write <strong>SQL</strong> (the same language used in most databases). Snowflake's brain figures out the best plan, sends it to a compute engine (Virtual Warehouse), which reads only the relevant data from storage, and returns results — often in seconds, even across billions of rows.
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🏭</div>
+        <div class="card-title">Virtual Warehouses</div>
+        <div class="card-desc">Independent compute clusters. Your analytics team and your data pipeline can run simultaneously without slowing each other down.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⏸️</div>
+        <div class="card-title">Auto-Suspend & Resume</div>
+        <div class="card-desc">Warehouses pause automatically when idle (saving cost) and wake up in seconds when a query arrives.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHY USE IT -->
+  <div id="tab-why" class="panel">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Traditional DB</th>
+          <th>Snowflake</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Scaling</td>
+          <td>Manual, slow, expensive</td>
+          <td><span class="badge badge-green">Instant & automatic</span></td>
+        </tr>
+        <tr>
+          <td>Concurrency</td>
+          <td>Queries slow each other down</td>
+          <td><span class="badge badge-green">Isolated workloads</span></td>
+        </tr>
+        <tr>
+          <td>Semi-structured data (JSON)</td>
+          <td>Requires special handling</td>
+          <td><span class="badge badge-blue">Native VARIANT type</span></td>
+        </tr>
+        <tr>
+          <td>Maintenance</td>
+          <td>DBA team required</td>
+          <td><span class="badge badge-green">Fully managed</span></td>
+        </tr>
+        <tr>
+          <td>Pricing model</td>
+          <td>Fixed server cost</td>
+          <td><span class="badge badge-yellow">Usage-based credits</span></td>
+        </tr>
+        <tr>
+          <td>Data sharing</td>
+          <td>ETL pipelines needed</td>
+          <td><span class="badge badge-green">Live share with no copy</span></td>
+        </tr>
+        <tr>
+          <td>Time travel</td>
+          <td>Manual backups only</td>
+          <td><span class="badge badge-blue">Query data from the past</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- USE CASES -->
+  <div id="tab-usecases" class="panel">
+    <div class="usecase-item">
+      <div class="usecase-emoji">📊</div>
+      <div>
+        <div class="usecase-name">Business Intelligence & Analytics</div>
+        <div class="usecase-desc">Connect BI tools like Tableau or Looker directly to Snowflake. Analysts write SQL queries against huge datasets and get fast results without affecting production systems.</div>
+      </div>
+    </div>
+    <div class="usecase-item">
+      <div class="usecase-emoji">🔁</div>
+      <div>
+        <div class="usecase-name">Data Warehousing (ELT Pipelines)</div>
+        <div class="usecase-desc">Pull data from many sources (Salesforce, Stripe, databases), load it into Snowflake, and transform it there. Tools like dbt are commonly used alongside Snowflake.</div>
+      </div>
+    </div>
+    <div class="usecase-item">
+      <div class="usecase-emoji">🤝</div>
+      <div>
+        <div class="usecase-name">Secure Data Sharing</div>
+        <div class="usecase-desc">Share live, read-only data with partners or customers — no file exports, no copies. They query your data directly through their own Snowflake account.</div>
+      </div>
+    </div>
+    <div class="usecase-item">
+      <div class="usecase-emoji">🤖</div>
+      <div>
+        <div class="usecase-name">ML & Data Science</div>
+        <div class="usecase-desc">Run Python or ML workloads inside Snowflake via Snowpark. Data scientists can process data at scale without moving it out of Snowflake.</div>
+      </div>
+    </div>
+    <div class="usecase-item">
+      <div class="usecase-emoji">📡</div>
+      <div>
+        <div class="usecase-name">Real-Time Data Ingestion</div>
+        <div class="usecase-desc">Ingest streaming data (events, logs, clicks) via Kafka or Snowpipe for near-real-time analytics dashboards.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY TERMS -->
+  <div id="tab-terms" class="panel">
+    <div class="term-item">
+      <div class="term-name">Virtual Warehouse</div>
+      <div class="term-def">A compute cluster that executes queries. You can have many running at once — each isolated from the others. Think of it as a separate query engine you spin up on demand.</div>
+    </div>
+    <div class="term-item">
+      <div class="term-name">Database & Schema</div>
+      <div class="term-def">Snowflake organizes data in Databases → Schemas → Tables. Same hierarchy as traditional databases, but these are logical containers, not physical storage.</div>
+    </div>
+    <div class="term-item">
+      <div class="term-name">Snowpipe</div>
+      <div class="term-def">A continuous data loading service. Automatically loads new files from cloud storage (S3, GCS, Azure Blob) into Snowflake as they arrive.</div>
+    </div>
+    <div class="term-item">
+      <div class="term-name">Time Travel</div>
+      <div class="term-def">Query your data as it existed at a previous point in time (up to 90 days). Useful for auditing, recovering accidentally deleted data, or comparing historical states.</div>
+    </div>
+    <div class="term-item">
+      <div class="term-name">Snowpark</div>
+      <div class="term-def">Run Python, Java, or Scala code directly inside Snowflake. Data scientists can do ML processing without ever moving data out of the platform.</div>
+    </div>
+    <div class="term-item">
+      <div class="term-name">Data Marketplace</div>
+      <div class="term-def">A built-in store where companies publish datasets (weather data, financial data, etc.) for others to query live — no downloads required.</div>
+    </div>
+    <div class="term-item">
+      <div class="term-name">Credits</div>
+      <div class="term-def">Snowflake's billing unit. You consume credits based on the size and runtime of your Virtual Warehouses. Storage is billed separately per terabyte.</div>
+    </div>
+  </div>
+
+  <div class="footer-note">SNOWFLAKE EXPLAINED · INTERACTIVE GUIDE</div>
+</div>
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
