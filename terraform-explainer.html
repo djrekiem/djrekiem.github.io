@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terraform Explained</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #151820;
+    --surface2: #1c2030;
+    --border: #252a3a;
+    --purple: #7c6af7;
+    --green: #3ecf8e;
+    --orange: #f97316;
+    --blue: #38bdf8;
+    --red: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124,106,247,0.15);
+    border: 1px solid rgba(124,106,247,0.3);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--purple);
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1.1rem;
+    font-weight: 400;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Analogy card */
+  .analogy-card {
+    background: linear-gradient(135deg, rgba(124,106,247,0.12), rgba(56,189,248,0.08));
+    border: 1px solid rgba(124,106,247,0.25);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 40px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .analogy-card .tag {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--purple);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .analogy-card p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .analogy-card strong { color: var(--green); }
+
+  /* Section title */
+  .section-title {
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    margin-top: 48px;
+  }
+
+  /* Concept cards grid */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 0;
+  }
+
+  .concept-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    animation: fadeUp 0.5s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .concept-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .concept-card:hover {
+    border-color: rgba(124,106,247,0.4);
+    transform: translateY(-2px);
+    background: var(--surface2);
+  }
+
+  .concept-card:hover::before { opacity: 1; }
+  .concept-card.purple::before { background: var(--purple); }
+  .concept-card.green::before { background: var(--green); }
+  .concept-card.orange::before { background: var(--orange); }
+  .concept-card.blue::before { background: var(--blue); }
+  .concept-card.red::before { background: var(--red); }
+
+  .concept-card.active {
+    border-color: rgba(124,106,247,0.5);
+    background: var(--surface2);
+  }
+
+  .card-icon {
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .card-short {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Expanded detail */
+  .detail-panel {
+    background: var(--surface2);
+    border: 1px solid rgba(124,106,247,0.25);
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-top: 16px;
+    display: none;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .detail-panel.show { display: block; }
+
+  .detail-panel h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+
+  .detail-panel p {
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+  }
+
+  .detail-panel p:last-child { margin-bottom: 0; }
+
+  .code-block {
+    background: #0a0c10;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    color: #a8b0c8;
+    overflow-x: auto;
+    margin-top: 12px;
+  }
+
+  .code-block .k { color: var(--purple); }
+  .code-block .s { color: var(--green); }
+  .code-block .c { color: var(--muted); font-style: italic; }
+  .code-block .a { color: var(--blue); }
+  .code-block .v { color: var(--orange); }
+
+  /* Workflow section */
+  .workflow {
+    margin-top: 8px;
+  }
+
+  .workflow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .workflow-steps::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 28px;
+    bottom: 28px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--purple), var(--green));
+    opacity: 0.3;
+  }
+
+  .workflow-step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 18px 0;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 16px;
+    transition: background 0.2s;
+  }
+
+  .workflow-step:hover { background: var(--surface); }
+
+  .step-num {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+    border: 2px solid;
+    position: relative;
+    z-index: 1;
+    background: var(--bg);
+  }
+
+  .step-num.s1 { color: var(--purple); border-color: var(--purple); }
+  .step-num.s2 { color: var(--blue); border-color: var(--blue); }
+  .step-num.s3 { color: var(--orange); border-color: var(--orange); }
+  .step-num.s4 { color: var(--green); border-color: var(--green); }
+
+  .step-content h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .step-content p {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .cmd-tag {
+    display: inline-block;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--green);
+    margin-top: 6px;
+  }
+
+  /* Comparison table */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin-top: 8px;
+  }
+
+  .compare-table th {
+    background: var(--surface);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .compare-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    line-height: 1.5;
+    vertical-align: top;
+  }
+
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .pill.good { background: rgba(62,207,142,0.15); color: var(--green); }
+  .pill.bad { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  /* Footer */
+  .footer-note {
+    text-align: center;
+    margin-top: 56px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85rem;
+    animation: fadeUp 0.6s 0.5s ease both;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .concept-card:nth-child(1) { animation-delay: 0.05s; }
+  .concept-card:nth-child(2) { animation-delay: 0.1s; }
+  .concept-card:nth-child(3) { animation-delay: 0.15s; }
+  .concept-card:nth-child(4) { animation-delay: 0.2s; }
+  .concept-card:nth-child(5) { animation-delay: 0.25s; }
+
+  @media (max-width: 600px) {
+    .cards-grid { grid-template-columns: 1fr; }
+    .detail-panel { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-badge">⚡ Infrastructure as Code</div>
+    <h1>Terraform, Simply</h1>
+    <p class="subtitle">A visual guide for people who know the basics and want to go deeper.</p>
+  </div>
+
+  <!-- Analogy -->
+  <div class="analogy-card">
+    <div class="tag">💡 The Core Idea</div>
+    <p>
+      Imagine you're furnishing an apartment. You could buy things one by one, keep track in your head, and forget what you ordered. <strong>Or</strong> you write a shopping list — and whenever you update the list, everything adjusts automatically. Terraform is that shopping list, but for cloud infrastructure (servers, databases, networks…). You describe <strong>what you want</strong>, and Terraform figures out <strong>how to make it happen</strong>.
+    </p>
+  </div>
+
+  <!-- Core Concepts -->
+  <div class="section-title">// Core Concepts — click to expand</div>
+  <div class="cards-grid" id="concepts">
+
+    <div class="concept-card purple" onclick="toggle('c1', this)">
+      <div class="card-icon">📄</div>
+      <div class="card-title">Configuration Files</div>
+      <div class="card-short">You write .tf files describing your desired infrastructure</div>
+    </div>
+
+    <div class="concept-card green" onclick="toggle('c2', this)">
+      <div class="card-icon">🗺️</div>
+      <div class="card-title">State File</div>
+      <div class="card-short">Terraform tracks what it already built — its "memory"</div>
+    </div>
+
+    <div class="concept-card orange" onclick="toggle('c3', this)">
+      <div class="card-icon">🔌</div>
+      <div class="card-title">Providers</div>
+      <div class="card-short">Plugins that let Terraform talk to AWS, GCP, Azure, etc.</div>
+    </div>
+
+    <div class="concept-card blue" onclick="toggle('c4', this)">
+      <div class="card-icon">📦</div>
+      <div class="card-title">Resources</div>
+      <div class="card-short">Individual pieces of infrastructure (a server, a bucket…)</div>
+    </div>
+
+    <div class="concept-card red" onclick="toggle('c5', this)">
+      <div class="card-icon">♻️</div>
+      <div class="card-title">Modules</div>
+      <div class="card-short">Reusable bundles of resources — like functions in code</div>
+    </div>
+
+  </div>
+
+  <!-- Detail panels -->
+  <div class="detail-panel" id="c1">
+    <h3>📄 Configuration Files (.tf)</h3>
+    <p>You write plain text files in <strong>HCL (HashiCorp Configuration Language)</strong> — it's designed to be human-readable. You describe your infrastructure declaratively: "I want an EC2 server of this size in this region." You don't write steps — you just describe the end state.</p>
+    <div class="code-block">
+<span class="c"># main.tf — "I want an EC2 server"</span>
+<span class="k">resource</span> <span class="s">"aws_instance"</span> <span class="s">"web_server"</span> {
+  <span class="a">ami</span>           = <span class="s">"ami-0c55b159cbfafe1f0"</span>
+  <span class="a">instance_type</span> = <span class="s">"t2.micro"</span>
+
+  <span class="a">tags</span> = {
+    <span class="a">Name</span> = <span class="s">"MyWebServer"</span>
+  }
+}
+    </div>
+  </div>
+
+  <div class="detail-panel" id="c2">
+    <h3>🗺️ The State File</h3>
+    <p>Terraform stores a <strong>terraform.tfstate</strong> file that records what it has already built. This is crucial — it's how Terraform knows the difference between "create this new server" vs "this server already exists, leave it alone."</p>
+    <p>Think of it like a ledger. Every time you run Terraform, it compares your config (what you want) against the state file (what exists) and only makes the changes needed. In teams, this state file is usually stored in a shared location like S3 so everyone's in sync.</p>
+  </div>
+
+  <div class="detail-panel" id="c3">
+    <h3>🔌 Providers</h3>
+    <p>Terraform itself doesn't know how to create an AWS server or a Google Cloud database. <strong>Providers</strong> are plugins that add that knowledge. There are thousands — AWS, Azure, GCP, Kubernetes, GitHub, Cloudflare, even Spotify.</p>
+    <div class="code-block">
+<span class="k">terraform</span> {
+  <span class="a">required_providers</span> {
+    <span class="a">aws</span> = {
+      <span class="a">source</span>  = <span class="s">"hashicorp/aws"</span>
+      <span class="a">version</span> = <span class="s">"~> 5.0"</span>
+    }
+  }
+}
+
+<span class="k">provider</span> <span class="s">"aws"</span> {
+  <span class="a">region</span> = <span class="s">"us-east-1"</span>
+}
+    </div>
+  </div>
+
+  <div class="detail-panel" id="c4">
+    <h3>📦 Resources</h3>
+    <p>A <strong>resource</strong> is the most basic building block in Terraform — it represents one piece of infrastructure. An S3 bucket, a virtual machine, a DNS record, a firewall rule. You combine many resources to describe a full system.</p>
+    <p>Resources have a <strong>type</strong> (e.g. <code style="color:var(--green); font-family:monospace">aws_s3_bucket</code>), a <strong>name</strong> you choose, and <strong>arguments</strong> that configure it. Resources can also reference each other.</p>
+    <div class="code-block">
+<span class="c"># A bucket that references a variable</span>
+<span class="k">resource</span> <span class="s">"aws_s3_bucket"</span> <span class="s">"my_bucket"</span> {
+  <span class="a">bucket</span> = <span class="v">var.bucket_name</span>
+}
+
+<span class="c"># A policy that references the bucket above</span>
+<span class="k">resource</span> <span class="s">"aws_s3_bucket_policy"</span> <span class="s">"policy"</span> {
+  <span class="a">bucket</span> = <span class="v">aws_s3_bucket.my_bucket.id</span>
+}
+    </div>
+  </div>
+
+  <div class="detail-panel" id="c5">
+    <h3>♻️ Modules</h3>
+    <p>When you find yourself writing the same infrastructure patterns repeatedly, you wrap them in a <strong>module</strong> — a reusable package. Instead of defining 10 resources every time you need a web server setup, you call a module with a few inputs.</p>
+    <p>The Terraform Registry has thousands of community-built modules (e.g. a complete VPC, an EKS cluster) you can use out of the box — like npm for infrastructure.</p>
+    <div class="code-block">
+<span class="c"># Using a community VPC module</span>
+<span class="k">module</span> <span class="s">"vpc"</span> {
+  <span class="a">source</span>  = <span class="s">"terraform-aws-modules/vpc/aws"</span>
+  <span class="a">version</span> = <span class="s">"5.0.0"</span>
+
+  <span class="a">name</span>    = <span class="s">"my-vpc"</span>
+  <span class="a">cidr</span>    = <span class="s">"10.0.0.0/16"</span>
+}
+    </div>
+  </div>
+
+  <!-- Workflow -->
+  <div class="section-title" style="margin-top:56px">// The Terraform Workflow</div>
+  <div class="workflow">
+    <div class="workflow-steps">
+
+      <div class="workflow-step">
+        <div class="step-num s1">01</div>
+        <div class="step-content">
+          <h4>Write your config</h4>
+          <p>Describe what infrastructure you want in .tf files. No imperative steps — just the desired end state.</p>
+          <span class="cmd-tag">📝 Edit main.tf</span>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-num s2">02</div>
+        <div class="step-content">
+          <h4>terraform init</h4>
+          <p>Downloads the required provider plugins and sets up the working directory. Run this once per project (or after adding providers).</p>
+          <span class="cmd-tag">$ terraform init</span>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-num s3">03</div>
+        <div class="step-content">
+          <h4>terraform plan</h4>
+          <p>Terraform shows you a preview — "here's what I'll create, change, or destroy" — without actually doing anything. Always review this first!</p>
+          <span class="cmd-tag">$ terraform plan</span>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-num s4">04</div>
+        <div class="step-content">
+          <h4>terraform apply</h4>
+          <p>Executes the plan. Terraform calls the cloud APIs to create/update/delete resources. When done, your infrastructure matches your config.</p>
+          <span class="cmd-tag">$ terraform apply</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Terraform vs Manual -->
+  <div class="section-title" style="margin-top:56px">// Terraform vs. Doing It Manually</div>
+  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-top: 8px;">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>Manual (Console / CLI)</th>
+          <th>With Terraform</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Reproducibility</td>
+          <td><span class="pill bad">Hard</span> — "What did I click again?"</td>
+          <td><span class="pill good">Easy</span> — re-run the same config</td>
+        </tr>
+        <tr>
+          <td>Team collaboration</td>
+          <td><span class="pill bad">Risky</span> — who changed what?</td>
+          <td><span class="pill good">Safe</span> — config lives in Git</td>
+        </tr>
+        <tr>
+          <td>Multiple environments</td>
+          <td><span class="pill bad">Tedious</span> — redo for dev/staging/prod</td>
+          <td><span class="pill good">Simple</span> — reuse with variables</td>
+        </tr>
+        <tr>
+          <td>Disaster recovery</td>
+          <td><span class="pill bad">Slow</span> — recreate from memory</td>
+          <td><span class="pill good">Fast</span> — terraform apply restores</td>
+        </tr>
+        <tr>
+          <td>Change visibility</td>
+          <td><span class="pill bad">None</span> — no diff, no audit trail</td>
+          <td><span class="pill good">Full</span> — plan shows exact changes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer-note">
+    Built to help you go from "I know the concept" to "I actually get it" 🚀<br>
+    Next step: try <strong>terraform init</strong> on a real project!
+  </div>
+
+</div>
+
+<script>
+  let currentOpen = null;
+
+  function toggle(id, card) {
+    const panel = document.getElementById(id);
+    const allCards = document.querySelectorAll('.concept-card');
+    const allPanels = document.querySelectorAll('.detail-panel');
+
+    if (currentOpen === id) {
+      panel.classList.remove('show');
+      card.classList.remove('active');
+      currentOpen = null;
+      return;
+    }
+
+    allPanels.forEach(p => p.classList.remove('show'));
+    allCards.forEach(c => c.classList.remove('active'));
+
+    // Insert panel after the card grid
+    const grid = document.getElementById('concepts');
+    grid.after(panel);
+    panel.classList.add('show');
+    card.classList.add('active');
+    currentOpen = id;
+
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
+</script>
+</body>
+</html>
