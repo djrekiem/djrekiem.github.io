@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Omar Serna — Data Reliability Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --gold: #f0c040;
+    --text: #e8edf5;
+    --muted: #7a8ba0;
+    --border: rgba(0,212,255,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HERO ── */
+  header {
+    min-height: 40vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    padding: 2rem 0 1rem;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    right: -200px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,212,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.2s;
+  }
+
+  .hero-name {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 900;
+    line-height: 1.05;
+    margin-bottom: 1rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+
+  .hero-name span {
+    display: block;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-title {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--accent2);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+
+  .hero-summary {
+    max-width: 600px;
+    color: var(--muted);
+    font-size: 1.05rem;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+
+  .hero-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 1s;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .contact-item:hover { color: var(--accent); }
+  .contact-item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── SECTION TITLES ── */
+  section { padding: 2.5rem 0; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .section-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .section-header .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .section-header .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* ── EXPERIENCE ── */
+  .experience-list { display: flex; flex-direction: column; gap: 0; }
+
+  .exp-item {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    gap: 2rem;
+    padding: 2.5rem 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .exp-item:first-child { border-top: 1px solid var(--border); }
+
+  .exp-meta { padding-top: 0.25rem; }
+
+  .exp-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+  }
+
+  .exp-company {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .exp-location {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    opacity: 0.6;
+  }
+
+  .exp-role {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+  .exp-achievements {
+    margin-bottom: 1rem;
+  }
+
+  .exp-achievements h4 {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent2);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .exp-achievements ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .exp-achievements li {
+    font-size: 0.9rem;
+    color: var(--muted);
+    padding-left: 1rem;
+    position: relative;
+  }
+
+  .exp-achievements li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  .env-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .env-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    background: rgba(0,212,255,0.03);
+  }
+
+  /* ── SKILLS ── */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .skill-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.75rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+
+  .skill-card:hover {
+    border-color: rgba(0,212,255,0.4);
+    transform: translateY(-3px);
+  }
+
+  .skill-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .skill-card:hover::before { opacity: 1; }
+
+  .skill-card-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  .skill-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .skill-list li {
+    font-size: 0.82rem;
+    color: var(--muted);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 3px;
+    padding: 0.15rem 0.5rem;
+  }
+
+  /* ── EDUCATION ── */
+  .edu-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .edu-degree {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .edu-school {
+    color: var(--accent);
+    font-size: 0.9rem;
+  }
+
+  .edu-year {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── COURSES ── */
+  .courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .course-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+    border-left: 2px solid var(--border);
+    transition: border-color 0.2s;
+  }
+
+  .course-item:hover { border-color: var(--accent); }
+
+  .course-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    padding-top: 0.1rem;
+    min-width: 70px;
+  }
+
+  .course-name { font-size: 0.88rem; color: var(--muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2.5rem 0;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  footer span { color: var(--accent); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .exp-item { grid-template-columns: 1fr; gap: 0.5rem; }
+    .edu-block { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header>
+  <div class="wrapper">
+    <p class="hero-label">Data Engineer · 14+ Years Experience</p>
+    <h1 class="hero-name">
+      <span>Omar Serna</span>
+    </h1>
+    <p class="hero-title">Sr. Data Reliability Engineer</p>
+    <p class="hero-summary">
+      Specialist in Data Warehousing, ETL architecture, and cloud-based data integration. 
+      Experienced across AWS, Snowflake, Airflow, and AI tooling — delivering reliable, 
+      observable data pipelines for enterprise-scale operations.
+    </p>
+    <div class="hero-contact">
+      <a class="contact-item" href="mailto:omar.villagran@gmail.com">
+        <span class="dot"></span>omar.villagran@gmail.com
+      </a>
+      <a class="contact-item" href="tel:9496784840">
+        <span class="dot"></span>949-678-4840
+      </a>
+      <a class="contact-item" href="https://www.linkedin.com/in/omar-villagran-serna/" target="_blank">
+        <span class="dot"></span>LinkedIn
+      </a>
+      <span class="contact-item">
+        <span class="dot"></span>Irvine, CA / Hybrid
+      </span>
+    </div>
+  </div>
+</header>
+
+<!-- EXPERIENCE -->
+<section>
+  <div class="wrapper">
+    <div class="section-header">
+      <h2>Work Experience</h2>
+      <div class="line"></div>
+    </div>
+
+    <div class="experience-list">
+
+      <!-- Taco Bell Sr. -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Jan 2023 — Present</div>
+          <div class="exp-company">Taco Bell</div>
+          <div class="exp-location">Irvine, CA / Hybrid</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">Sr. Data Reliability Engineer</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Led Loyalty Migration Project — successfully moved loyalty hosting between vendors via import/export interfaces</li>
+              <li>Implemented MasterCard vendor delivery for TLD, Supreme Project, On Time Delivery and Dimension data</li>
+              <li>Delivered Sales Recovery Project enabling 40% recovery of disputed sales for DoorDash, Grubhub & Uber Eats</li>
+              <li>Integrated Bedrock AI within AWS environment for intelligent process automation</li>
+              <li>Automated Same Store Sales Growth and Transaction Growth Reports for stakeholder delivery</li>
+              <li>Implemented Dynamic Glue jobs loading Iceberg tables on the Lakehouse</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">AWS</span><span class="env-tag">Airflow</span><span class="env-tag">Talend 8.0</span>
+            <span class="env-tag">Snowflake</span><span class="env-tag">Redshift</span><span class="env-tag">AWS Glue</span>
+            <span class="env-tag">Kinesis</span><span class="env-tag">Bedrock</span><span class="env-tag">IICS</span>
+            <span class="env-tag">Microsoft Fabric</span><span class="env-tag">Python</span><span class="env-tag">Iceberg</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Taco Bell DRE -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Apr 2022 — Jan 2023</div>
+          <div class="exp-company">Taco Bell</div>
+          <div class="exp-location">Remote</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">Data Reliability Engineer</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Developed Product Fix for EDM reconciliation to update Dimension tables used in reports</li>
+              <li>Reprocessed missing Order Headers for Customer 360 / Amperity integration</li>
+              <li>Migrated MicroStrategy Dashboard to Power BI for TLD Gross Sales</li>
+              <li>Resolved backend ETL issues for sales and inventory processes</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">IICS</span><span class="env-tag">Talend</span><span class="env-tag">Python</span>
+            <span class="env-tag">Power BI</span><span class="env-tag">Redshift</span><span class="env-tag">Airflow</span>
+            <span class="env-tag">Lambda</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trinity Industries -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Apr 2020 — Feb 2023</div>
+          <div class="exp-company">Trinity Industries</div>
+          <div class="exp-location">Querétaro, Mexico</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">Integration Solutions Architect</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Full migration of Informatica PowerCenter interfaces from multiple ERP systems</li>
+              <li>Delivered EHS Dashboard connecting various source systems via APIs</li>
+              <li>Developed Oracle Financials replication into Data Warehouses for reporting</li>
+              <li>Served as Informatica Cloud Administrator managing users, promotions, and scheduling</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">Informatica Cloud</span><span class="env-tag">PowerCenter 10</span>
+            <span class="env-tag">Mulesoft 7.10</span><span class="env-tag">Oracle 12c</span>
+            <span class="env-tag">SQL Server</span><span class="env-tag">Python</span><span class="env-tag">DB2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Norfolk Southern Data Architect -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Feb 2017 — Mar 2020</div>
+          <div class="exp-company">Norfolk Southern</div>
+          <div class="exp-location">Atlanta, GA</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">Data Architect</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Architected MDM Initial Load, Delta Party Load, and Delta Hierarchy Load</li>
+              <li>Integrated Corporate, Account and Location data from multiple sources into MDM</li>
+              <li>Designed Salesforce Initial Load and integration architecture</li>
+              <li>Developed XML schemas for party/hierarchy payloads loaded into IBM MDM via MQ Queue</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">DataStage 11.5</span><span class="env-tag">Teradata 15</span>
+            <span class="env-tag">DB2 10.5</span><span class="env-tag">QualityStage</span>
+            <span class="env-tag">IBM MQ</span><span class="env-tag">Spotfire</span><span class="env-tag">MDM</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Maya Shakti -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Apr 2017 — Present</div>
+          <div class="exp-company">Maya Shakti Records</div>
+          <div class="exp-location">Remote</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">Solution Architect</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Built end-to-end Social Media analytics — engagements, likes, shares, comments, tags and mentions</li>
+              <li>Integrated Facebook and YouTube real-time APIs for marketing KPI dashboards</li>
+              <li>Developed Power BI and Google Data Studio dashboards for stakeholders</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">Tibco Jaspersoft ETL 6.0</span><span class="env-tag">Power BI</span>
+            <span class="env-tag">MySQL</span><span class="env-tag">Google Data Studio</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- United Healthcare -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Oct 2015 — Feb 2017</div>
+          <div class="exp-company">United Healthcare / Optum</div>
+          <div class="exp-location">Eden Prairie, MN</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">BI Lead Consultant</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Led implementation of MAO Claims, Invalid EDPS Claims, Suspects, and Gap Models</li>
+              <li>Improved ETL performance with temporary tables, window tables, and indexed partition queries</li>
+              <li>Scheduled Tivoli TWS jobs and handled large-volume data migrations with SQL Loader</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">DataStage 11.3</span><span class="env-tag">Teradata 13.1</span>
+            <span class="env-tag">Oracle 12c</span><span class="env-tag">Tableau 9.3</span><span class="env-tag">TWS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Walmart -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Aug 2012 — Dec 2014</div>
+          <div class="exp-company">Walmart International</div>
+          <div class="exp-location">US · Mexico · Canada · Brazil · China</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">Technical Expert</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Managed 8 developers and oversaw delivery of Associate Scheduling interfaces across 7 markets</li>
+              <li>Built performance optimization for metrics interface processing 10GB of daily XML data via SFTP</li>
+              <li>Led DataStage internal training program for new developers</li>
+              <li>Migrated DataStage project from 8.5 to 9.1 across multiple markets</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">Teradata 13.1</span><span class="env-tag">DB2 9.1</span>
+            <span class="env-tag">DataStage 8.5 / 9.1</span><span class="env-tag">Tableau 9.1</span>
+            <span class="env-tag">Shell Scripting</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BBVA -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Apr 2011 — Jul 2012</div>
+          <div class="exp-company">BBVA Bancomer</div>
+          <div class="exp-location">Mexico City, Mexico</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">BI Data Manager Lead</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Implemented dynamic dashboards for Credit Bureau and Regulatory Segmentation</li>
+              <li>Led MicroStrategy training for 6 developers</li>
+              <li>End-to-end design of ETL (Informatica) and reporting (MicroStrategy) solutions</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">MicroStrategy 9.2.1</span><span class="env-tag">Informatica PC 9.1</span>
+            <span class="env-tag">Oracle Exadata</span><span class="env-tag">Erwin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Softtek -->
+      <div class="exp-item">
+        <div class="exp-meta">
+          <div class="exp-date">Sep 2007 — Apr 2011</div>
+          <div class="exp-company">Softtek / SAT</div>
+          <div class="exp-location">Mexico City, Mexico</div>
+        </div>
+        <div class="exp-body">
+          <div class="exp-role">ETL Senior Developer</div>
+          <div class="exp-achievements">
+            <h4>Key Achievements</h4>
+            <ul>
+              <li>Designed star and snowflake schemas for analytical data models from scratch</li>
+              <li>Implemented Legal, Tax Account and Administrative Appeals modules</li>
+              <li>Developed Datastage SCD logic using Transformer, Lookup, CDC, SCD and Pivot stages</li>
+            </ul>
+          </div>
+          <div class="env-tags">
+            <span class="env-tag">DataStage 8.1</span><span class="env-tag">Oracle 10g / 11g</span>
+            <span class="env-tag">Informix</span><span class="env-tag">Erwin</span><span class="env-tag">VSS</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section style="background: var(--surface2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="wrapper">
+    <div class="section-header">
+      <h2>Technical Skills</h2>
+      <div class="line"></div>
+    </div>
+    <div class="skills-grid">
+
+      <div class="skill-card">
+        <div class="skill-card-title">Languages</div>
+        <ul class="skill-list">
+          <li>Python</li><li>SQL</li><li>UNIX Shell Scripting</li>
+        </ul>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">AI Tools</div>
+        <ul class="skill-list">
+          <li>Claude Anthropic</li><li>AWS Bedrock</li><li>GitHub Copilot</li>
+        </ul>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">Integration Tools</div>
+        <ul class="skill-list">
+          <li>Informatica Cloud</li><li>Apache Airflow</li><li>AWS Glue</li><li>AWS Kinesis</li>
+          <li>Talend 7.3 / 8.0</li><li>Microsoft Fabric</li><li>Informatica PC 10</li>
+          <li>Mulesoft Anypoint 7.10</li><li>IBM DataStage 8–11.5</li><li>SSIS 2005/2008</li>
+          <li>Tibco Jaspersoft ETL</li>
+        </ul>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">Databases</div>
+        <ul class="skill-list">
+          <li>Redshift</li><li>Snowflake</li><li>AWS Athena</li><li>Oracle 10g–12c</li>
+          <li>SQL Server</li><li>DB2 9.2/10.5</li><li>Teradata 13/14</li>
+          <li>MySQL</li><li>Informix</li><li>Progress</li>
+        </ul>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">BI & Reporting</div>
+        <ul class="skill-list">
+          <li>Tableau</li><li>Power BI</li><li>MicroStrategy</li><li>Spotfire</li>
+          <li>Microsoft Fabric</li><li>Google Data Studio</li><li>SSAS / SSRS</li>
+        </ul>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">Data Modeling & Other</div>
+        <ul class="skill-list">
+          <li>Erwin</li><li>IBM Data Architect</li><li>SCRUM / KANBAN</li>
+          <li>JIRA</li><li>MDM Data Stewardship</li><li>IBM MQ</li>
+          <li>SVN / PVCS / VSS</li><li>Tivoli TWS</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- EDUCATION -->
+<section>
+  <div class="wrapper">
+    <div class="section-header">
+      <h2>Education</h2>
+      <div class="line"></div>
+    </div>
+    <div class="edu-block">
+      <div>
+        <div class="edu-degree">Electronics & Telecommunications Engineering</div>
+        <div class="edu-school">Universidad Iberoamericana — Mexico City</div>
+      </div>
+      <div class="edu-year">2003 — 2007</div>
+    </div>
+  </div>
+</section>
+
+<!-- COURSES -->
+<section style="padding-top: 0;">
+  <div class="wrapper">
+    <div class="section-header">
+      <h2>Certifications & Courses</h2>
+      <div class="line"></div>
+    </div>
+    <div class="courses-grid">
+      <div class="course-item"><span class="course-date">Apr 2009</span><span class="course-name">IBM DataStage Essentials</span></div>
+      <div class="course-item"><span class="course-date">Oct 2009</span><span class="course-name">QualityStage Online Essentials</span></div>
+      <div class="course-item"><span class="course-date">Apr 2014</span><span class="course-name">UNIX Scripting</span></div>
+      <div class="course-item"><span class="course-date">Nov 2014</span><span class="course-name">SAFE Project Management</span></div>
+      <div class="course-item"><span class="course-date">Mar 2016</span><span class="course-name">OSAM Optum Software Agile Management</span></div>
+      <div class="course-item"><span class="course-date">Mar 2017</span><span class="course-name">IBM MDM Workbench</span></div>
+      <div class="course-item"><span class="course-date">Oct 2018</span><span class="course-name">DS201: DataStax Enterprise 6 — Cassandra Foundations</span></div>
+      <div class="course-item"><span class="course-date">Oct 2018</span><span class="course-name">DS210: DataStax Enterprise 6 — Operations</span></div>
+      <div class="course-item"><span class="course-date">Oct 2018</span><span class="course-name">DS220: DataStax Enterprise 6 — Data Modeling</span></div>
+      <div class="course-item"><span class="course-date">Aug 2021</span><span class="course-name">Mulesoft</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrapper">
+    <p>Omar Serna &nbsp;·&nbsp; <span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail
