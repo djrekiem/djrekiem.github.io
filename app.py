@@ -14,8 +14,8 @@ from flask_cors import CORS
 DB_PATH = "database/ibiza.db"
 
 app = Flask(__name__)
-CORS(app)  # Required so your GitHub Pages HTML can call this API
-
+#CORS(app)  # Required so your GitHub Pages HTML can call this API
+CORS(app, headers={'ngrok-skip-browser-warning': 'true'})
 def get_con():
     return duckdb.connect(DB_PATH, read_only=True)
 
