@@ -394,7 +394,12 @@ let sortDir      = 'asc';
 const PAGE_SIZE  = 50;
 
 // Shared fetch options — sends ngrok bypass header on every request
-const FETCH_OPTS = { headers: { "ngrok-skip-browser-warning": "true" } };
+const FETCH_OPTS = { headers: { "ngrok-skip-browser-warning": "true", "Accept": "application/json" } };
+
+// Append bypass param to URL for ngrok free tier
+function apiUrl(path) {
+  return `${API}${path}${path.includes('?') ? '&' : '?'}ngrok-skip-browser-warning=true`;
+}
 
 // ── Boot ─────────────────────────────────────────────────────
 async function reconnect() {
@@ -406,7 +411,7 @@ async function reconnect() {
 async function loadTables() {
   const list = document.getElementById('table-list');
   try {
-    const res = await fetch(`${API}/tables`, FETCH_OPTS);
+    const res = await fetch(apiUrl("/tables"), FETCH_OPTS);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     setStatus('connected');
@@ -427,7 +432,7 @@ async function loadTables() {
       list.appendChild(btn);
 
       // Async count
-      fetch(`${API}/table/${t}?limit=1`, FETCH_OPTS).then(r => r.json()).then(d => {
+      fetch(apiUrl(`/table/${t}?limit=1`), FETCH_OPTS).then(r => r.json()).then(d => {
         btn.querySelector('.row-count').textContent = fmtNum(d.total_rows);
       }).catch(() => {});
     }
@@ -450,7 +455,7 @@ async function selectTable(name) {
   showLoader();
 
   try {
-    const res  = await fetch(`${API}/table/${name}`, FETCH_OPTS);
+    const res  = await fetch(apiUrl(`/table/${name}`), FETCH_OPTS);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     currentData  = data.rows;

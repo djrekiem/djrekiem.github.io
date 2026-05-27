@@ -8,46 +8,41 @@ import decimal
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-DB_PATH = "database/ibiza.db"
+DB_PATH = "ibiza.db"
 
 app = Flask(__name__)
-CORS(app, origins="*")
+CORS(app, origins="*", supports_credentials=False)
 
 @app.after_request
 def add_headers(response):
-    # Bypass ngrok's browser warning interception
     response.headers['ngrok-skip-browser-warning'] = 'true'
     response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, ngrok-skip-browser-warning'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = '*'
     return response
 
-def get_con():
-    return duckdb.connect(DB_PATH, read_only=True)
-
-
-@app.route("/")
+@app.route("/", methods=["GET", "OPTIONS"])
 def index():
-    return jsonify({
-        "status": "ok",
-        "endpoints": ["/tables", "/table/<name>"]
-    })
+    return jsonify({"status": "ok", "endpoints": ["/tables", "/table/<name>"]})
 
-
-@app.route("/tables")
+@app.route("/tables", methods=["GET", "OPTIONS"])
 def list_tables():
-    con = get_con()
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+    con = duckdb.connect(DB_PATH, read_only=True)
     tables = [row[0] for row in con.execute("SHOW TABLES").fetchall()]
     con.close()
     return jsonify({"tables": tables})
 
-
-@app.route("/table/<string:table_name>")
+@app.route("/table/<string:table_name>", methods=["GET", "OPTIONS"])
 def get_table(table_name):
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     limit  = request.args.get("limit",  default=None, type=int)
     offset = request.args.get("offset", default=0,    type=int)
 
-    con = get_con()
-
+    con = duckdb.connect(DB_PATH, read_only=True)
     tables = [row[0] for row in con.execute("SHOW TABLES").fetchall()]
     if table_name not in tables:
         con.close()
@@ -59,8 +54,8 @@ def get_table(table_name):
     if limit:
         query += f" LIMIT {limit} OFFSET {offset}"
 
-    result  = con.execute(query)
-    columns = [desc[0] for desc in result.description]
+    result   = con.execute(query)
+    columns  = [desc[0] for desc in result.description]
     raw_rows = result.fetchall()
     con.close()
 
@@ -76,14 +71,13 @@ def get_table(table_name):
     rows = [[serialize(v) for v in row] for row in raw_rows]
 
     return jsonify({
-        "table":        table_name,
-        "total_rows":   total,
+        "table":         table_name,
+        "total_rows":    total,
         "returned_rows": len(rows),
-        "offset":       offset,
-        "columns":      columns,
-        "rows":         rows,
+        "offset":        offset,
+        "columns":       columns,
+        "rows":          rows,
     })
-
 
 if __name__ == "__main__":
     print(f"Connecting to {DB_PATH}...")
