@@ -8,7 +8,7 @@ import decimal
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-DB_PATH = "ibiza.db"
+DB_PATH = "database/ibiza.db"
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=False)
