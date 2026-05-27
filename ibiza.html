@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ibiza DB Explorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── CONFIGURATION ─────────────────────────────────────────
+       Change API_BASE below to point to your Flask server.
+       When running locally:   http://localhost:5000
+       When deployed (ngrok):  https://your-ngrok-url.ngrok.io
+    ─────────────────────────────────────────────────────────── */
+
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #12121a;
+      --border:    #1e1e2e;
+      --accent:    #7c6af7;
+      --accent2:   #f76a8b;
+      --text:      #e8e8f0;
+      --muted:     #5a5a7a;
+      --success:   #6af7b8;
+      --row-even:  #0f0f18;
+      --row-hover: #1a1a28;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .logo span { font-weight: 400; opacity: 0.6; }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-left: auto;
+      transition: background 0.4s;
+      box-shadow: 0 0 0 0 transparent;
+    }
+    .status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+    .status-dot.error { background: var(--accent2); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.5; }
+    }
+
+    #status-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── API URL BAR ── */
+    .api-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .api-bar label { white-space: nowrap; text-transform: uppercase; letter-spacing: 1px; }
+    .api-bar input {
+      flex: 1;
+      max-width: 380px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      padding: 6px 12px;
+      border-radius: 4px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .api-bar input:focus { border-color: var(--accent); }
+    .api-bar button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .api-bar button:hover { opacity: 0.8; }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: calc(100vh - 112px);
+    }
+
+    /* ── SIDEBAR ── */
+    aside {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 0;
+    }
+
+    .sidebar-title {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 24px 16px;
+    }
+
+    .table-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 12px 24px;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .table-btn:hover { color: var(--text); background: var(--row-hover); }
+    .table-btn.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      background: rgba(124,106,247,0.08);
+    }
+
+    .table-btn .row-count {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.65rem;
+      background: var(--border);
+      padding: 2px 6px;
+      border-radius: 10px;
+      color: var(--muted);
+    }
+    .table-btn.active .row-count { background: rgba(124,106,247,0.2); color: var(--accent); }
+
+    /* ── MAIN ── */
+    main {
+      padding: 32px 40px;
+      overflow: auto;
+    }
+
+    .main-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .table-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+    .meta {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    /* Search */
+    .search-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .search-bar input {
+      flex: 1;
+      max-width: 320px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.78rem;
+      padding: 8px 14px;
+      border-radius: 4px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-bar input:focus { border-color: var(--accent); }
+
+    /* Table */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    thead {
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+    }
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      color: var(--accent);
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover { color: var(--text); }
+    th .sort-icon { margin-left: 4px; opacity: 0.4; }
+    th.sorted-asc .sort-icon::after  { content: ' ▲'; opacity: 1; }
+    th.sorted-desc .sort-icon::after { content: ' ▼'; opacity: 1; }
+    th:not(.sorted-asc):not(.sorted-desc) .sort-icon::after { content: ' ⇅'; }
+
+    tr:nth-child(even) { background: var(--row-even); }
+    tr:hover { background: var(--row-hover); }
+
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    td.null-val { color: var(--muted); font-style: italic; }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .pagination button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .pagination button:disabled { opacity: 0.3; cursor: default; }
+
+    /* States */
+    .empty-state {
+      text-align: center;
+      padding: 80px 40px;
+      color: var(--muted);
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+    .empty-state p { font-size: 0.85rem; line-height: 1.8; }
+
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 60px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      background: rgba(247,106,139,0.1);
+      border: 1px solid rgba(247,106,139,0.3);
+      color: var(--accent2);
+      padding: 16px 20px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+
+    /* GitHub notice */
+    .gh-notice {
+      background: rgba(124,106,247,0.08);
+      border: 1px solid rgba(124,106,247,0.2);
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 10px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .gh-notice strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ibiza<span>.db</span></div>
+  <span id="status-label">connecting…</span>
+  <div class="status-dot" id="status-dot"></div>
+</header>
+
+<div class="api-bar">
+  <label>API Base URL</label>
+  <input type="text" id="api-url" value="http://localhost:5000" placeholder="http://localhost:5000"/>
+  <button onclick="reconnect()">Connect</button>
+</div>
+
+<div class="layout">
+  <aside>
+    <div class="sidebar-title">Tables</div>
+    <div id="table-list">
+      <div style="padding:16px 24px;font-size:0.75rem;color:var(--muted)">Loading…</div>
+    </div>
+  </aside>
+
+  <main id="main-content">
+    <div class="empty-state">
+      <div class="icon">🗄️</div>
+      <p>Select a table from the sidebar<br/>to explore its data.</p>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────
+let API = document.getElementById('api-url').value.trim();
+let currentTable = null;
+let currentPage  = 0;
+let currentData  = [];
+let filteredData = [];
+let sortCol      = null;
+let sortDir      = 'asc';
+const PAGE_SIZE  = 50;
+
+// ── Boot ─────────────────────────────────────────────────────
+async function reconnect() {
+  API = document.getElementById('api-url').value.trim().replace(/\/$/, '');
+  setStatus('connecting');
+  await loadTables();
+}
+
+async function loadTables() {
+  const list = document.getElementById('table-list');
+  try {
+    const res = await fetch(`${API}/tables`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    setStatus('connected');
+
+    if (!data.tables.length) {
+      list.innerHTML = `<div style="padding:16px 24px;font-size:0.75rem;color:var(--muted)">No tables found.</div>`;
+      return;
+    }
+
+    // Fetch row counts for each table
+    list.innerHTML = '';
+    for (const t of data.tables) {
+      const btn = document.createElement('button');
+      btn.className = 'table-btn';
+      btn.dataset.table = t;
+      btn.innerHTML = `${t}<span class="row-count">…</span>`;
+      btn.onclick = () => selectTable(t);
+      list.appendChild(btn);
+
+      // Async count
+      fetch(`${API}/table/${t}?limit=1`).then(r => r.json()).then(d => {
+        btn.querySelector('.row-count').textContent = fmtNum(d.total_rows);
+      }).catch(() => {});
+    }
+
+  } catch (e) {
+    setStatus('error');
+    list.innerHTML = `<div class="error-msg" style="margin:16px">Cannot reach API.<br/>${e.message}</div>`;
+  }
+}
+
+// ── Table Selection ──────────────────────────────────────────
+async function selectTable(name) {
+  currentTable = name;
+  currentPage  = 0;
+  sortCol      = null;
+
+  document.querySelectorAll('.table-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.table === name));
+
+  showLoader();
+
+  try {
+    const res  = await fetch(`${API}/table/${name}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    currentData  = data.rows;
+    filteredData = [...currentData];
+    renderTable(data);
+  } catch (e) {
+    document.getElementById('main-content').innerHTML =
+      `<div class="error-msg">Failed to load table <strong>${name}</strong>: ${e.message}</div>`;
+  }
+}
+
+// ── Render ───────────────────────────────────────────────────
+let currentCols = [];  // guaranteed-order column list
+
+function renderTable(meta) {
+  currentCols = meta.columns;
+  const cols = currentCols;
+  const main = document.getElementById('main-content');
+
+  main.innerHTML = `
+    <div class="gh-notice">
+      <strong>⚠ GitHub Pages note:</strong> This file is static — it needs your Flask server running locally
+      (or exposed via <strong>ngrok</strong>) to load live data. Update the API Base URL above to match your server address.
+    </div>
+    <div class="main-header">
+      <div class="table-title">${currentTable}</div>
+      <div class="meta">${fmtNum(meta.total_rows)} rows · ${cols.length} columns</div>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Filter rows…" oninput="applyFilter(this.value)"/>
+      <span class="meta" id="filter-count"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="data-table">
+        <thead>
+          <tr>${cols.map(c => `
+            <th onclick="sortBy('${c}')" class="" data-col="${c}">
+              ${c}<span class="sort-icon"></span>
+            </th>`).join('')}
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button id="btn-prev" onclick="prevPage()">← Prev</button>
+      <span id="page-info"></span>
+      <button id="btn-next" onclick="nextPage()">Next →</button>
+    </div>
+  `;
+
+  renderPage();
+}
+
+function renderPage() {
+  const start = currentPage * PAGE_SIZE;
+  const slice = filteredData.slice(start, start + PAGE_SIZE);
+  const cols  = currentCols;
+
+  const tbody = document.getElementById('table-body');
+  // rows are arrays — access by index, not key, to guarantee alignment
+  tbody.innerHTML = slice.map(row => `
+    <tr>${cols.map((c, i) => {
+      const v = Array.isArray(row) ? row[i] : row[c];
+      if (v === null || v === undefined)
+        return `<td class="null-val">null</td>`;
+      return `<td title="${String(v).replace(/"/g,'&quot;')}">${esc(String(v))}</td>`;
+    }).join('')}</tr>
+  `).join('') || `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--muted);padding:40px">No rows match filter.</td></tr>`;
+
+  const total = filteredData.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById('page-info').textContent =
+    `Page ${currentPage + 1} of ${pages || 1}  (${fmtNum(total)} rows)`;
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = currentPage >= pages - 1;
+  document.getElementById('filter-count').textContent =
+    filteredData.length < currentData.length
+      ? `${fmtNum(filteredData.length)} of ${fmtNum(currentData.length)} shown` : '';
+}
+
+// ── Filter ───────────────────────────────────────────────────
+function applyFilter(q) {
+  const lq = q.toLowerCase();
+  filteredData = lq
+    ? currentData.filter(row =>
+        (Array.isArray(row) ? row : Object.values(row))
+          .some(v => String(v).toLowerCase().includes(lq)))
+    : [...currentData];
+  currentPage = 0;
+  renderPage();
+}
+
+// ── Sort ─────────────────────────────────────────────────────
+function sortBy(col) {
+  if (sortCol === col) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortCol = col;
+    sortDir = 'asc';
+  }
+
+  const idx = currentCols.indexOf(col);
+  filteredData.sort((a, b) => {
+    let av = Array.isArray(a) ? a[idx] : a[col];
+    let bv = Array.isArray(b) ? b[idx] : b[col];
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    if (!isNaN(av) && !isNaN(bv)) { av = +av; bv = +bv; }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+
+  document.querySelectorAll('th').forEach(th => {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+    if (th.dataset.col === col)
+      th.classList.add(sortDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+  });
+
+  currentPage = 0;
+  renderPage();
+}
+
+// ── Pagination ───────────────────────────────────────────────
+function prevPage() { if (currentPage > 0) { currentPage--; renderPage(); } }
+function nextPage() {
+  const pages = Math.ceil(filteredData.length / PAGE_SIZE);
+  if (currentPage < pages - 1) { currentPage++; renderPage(); }
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function showLoader() {
+  document.getElementById('main-content').innerHTML =
+    `<div class="loader"><div class="spinner"></div>Loading ${currentTable}…</div>`;
+}
+
+function setStatus(state) {
+  const dot   = document.getElementById('status-dot');
+  const label = document.getElementById('status-label');
+  dot.className = 'status-dot ' + state;
+  label.textContent = state === 'connected' ? 'connected' :
+                      state === 'error'     ? 'error'     : 'connecting…';
+}
+
+function fmtNum(n) { return n?.toLocaleString() ?? '—'; }
+function esc(s)    { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Init ─────────────────────────────────────────────────────
+reconnect();
+</script>
+</body>
+</html>
